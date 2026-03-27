@@ -23,17 +23,11 @@ PitchVis = function(_parentElement, _data) {
 PitchVis.prototype.initVis = function() {
     let vis = this;
 
-    vis.svg = d3.select("#chart")
-        .attr("width", width)
-        .attr("height", height);
-
+    vis.svg = d3.select("#chart").attr("width", width).attr("height", height);
     vis.tooltip = d3.select("#tooltip");
-
     vis.pitchers = [...new Set(vis.data.map(d => d.player_name))];
     vis.pitchTypes = [...new Set(
-        vis.data
-            .map(d => d.pitch_type)
-            .filter(d => d && d.trim() !== "")
+        vis.data.map(d => d.pitch_type).filter(d => d && d.trim() !== "")
     )];
 
     d3.select("#pitcher-select").selectAll("option").data(vis.pitchers).enter().append("option").text(d => d);
@@ -81,27 +75,19 @@ PitchVis.prototype.wrangleData = function() {
 
     vis.filtered = vis.data.filter(d =>
         d.player_name === selectedPitcher &&
-        (selectedType === "all" || d.pitch_type === selectedType)
-    );
+        (selectedType === "all" || d.pitch_type === selectedType));
 
-    vis.hits = vis.filtered.filter(d =>
-        ["single","double","triple","home_run"].includes(d.events)
-    );
+    vis.hits = vis.filtered.filter(d => ["single","double","triple","home_run"].includes(d.events));
 
-    vis.svg.transition()
-        .duration(200)
-        .style("opacity", 0)
+    vis.svg.transition().duration(200).style("opacity", 0)
         .on("end", () => {
             vis.updateVis();
-            vis.svg.transition()
-                .duration(300)
-                .style("opacity", 1);
+            vis.svg.transition().duration(300).style("opacity", 1);
         });
 };
 
-PitchVis.prototype.updateVis = function() {
+PitchVis.prototype.drawData = function() {
     let vis = this;
-    vis.svg.selectAll("*").remove();
 
     let legendData = [
         { label: "Non-Hits", color: "blue" },
@@ -137,11 +123,6 @@ PitchVis.prototype.updateVis = function() {
     vis.svg.selectAll(".nonhit-density").data(density(nonHits)).enter().append("path").attr("class", "nonhit-density").attr("d", d3.geoPath()).attr("fill", "blue").attr("opacity", 0.2);
     vis.svg.selectAll(".walk-density").data(density(walks)).enter().append("path").attr("class", "walk-density").attr("d", d3.geoPath()).attr("fill", "green").attr("opacity", 0.4)
         .on("mouseover", function(event, d) {
-            d3.select(this)
-                .attr("opacity", 0.8)
-                .attr("stroke", "black")
-                .attr("stroke-width", 2);
-
             vis.tooltip.style("opacity", 1)
                 .html(`
                     <strong>Walk Zone</strong><br>
@@ -162,11 +143,6 @@ PitchVis.prototype.updateVis = function() {
         });
     vis.svg.selectAll(".single-density").data(density(singles)).enter().append("path").attr("class", "single-density").attr("d", d3.geoPath()).attr("fill", "yellow").attr("opacity", 0.3)
         .on("mouseover", function(event, d) {
-            d3.select(this)
-                .attr("opacity", 0.7)
-                .attr("stroke", "black")
-                .attr("stroke-width", 2);
-
             vis.tooltip.style("opacity", 1)
                 .html(`<strong>Single Zone</strong><br>High single probability`);
         })
@@ -185,11 +161,6 @@ PitchVis.prototype.updateVis = function() {
 
     vis.svg.selectAll(".double-density").data(density(doubles)).enter().append("path").attr("class", "double-density").attr("d", d3.geoPath()).attr("fill", "orange").attr("opacity", 0.4)
         .on("mouseover", function(event, d) {
-            d3.select(this)
-                .attr("opacity", 0.85)
-                .attr("stroke", "black")
-                .attr("stroke-width", 2);
-
             vis.tooltip.style("opacity", 1)
                 .html(`<strong>Double Zone</strong><br>High double probability`);
         })
@@ -208,11 +179,6 @@ PitchVis.prototype.updateVis = function() {
 
     vis.svg.selectAll(".hr-density").data(density(homers)).enter().append("path").attr("class", "hr-density").attr("d", d3.geoPath()).attr("fill", "red").attr("opacity", 0.6)
         .on("mouseover", function(e, d) {
-            d3.select(this)
-                .attr("opacity", 0.9)
-                .attr("stroke", "black")
-                .attr("stroke-width", 2);
-
             vis.tooltip.style("opacity", 1)
                 .html(`<strong>Home Run Zone</strong><br>High danger area`);
         })
@@ -258,7 +224,35 @@ PitchVis.prototype.updateVis = function() {
     });
 
     vis.svg.selectAll(".all").data(vis.filtered).enter().append("circle").attr("cx", d => x(d.plate_x)).attr("cy", d => y(d.plate_z)).attr("r", 6).attr("fill", "blue").attr("opacity", 0.2).attr("pointer-events", "none");
-    vis.svg.append("rect").attr("x", x(-0.83)).attr("y", y(3.5)).attr("width", x(0.83) - x(-0.83)).attr("height", y(1.5) - y(3.5)).attr("fill", "none").attr("stroke", "black");
+};
+
+function drawStrikeZoneLine(vis, x1, y1, x2, y2, delay, onEnd = null) {
+    let strikeZoneLine = vis.svg.append("line").attr("x1", x1).attr("y1", y1).attr("x2", x1) .attr("y2", y1).attr("stroke", "black").attr("stroke-width", 4).attr("stroke-linecap", "round").attr("opacity", 0.9).transition().delay(delay).duration(400).ease(d3.easeCubicOut).attr("x2", x2).attr("y2", y2);
+    if (onEnd) {
+        strikeZoneLine.on("end", onEnd);
+    }
+}
+
+PitchVis.prototype.updateVis = function() {
+    let vis = this;
+
+    let marginTop = 100;
+    const padding = 0;
+    let x = d3.scaleLinear().domain([-2, 2]).range([50 + padding, width - 50 - padding]);
+    let y = d3.scaleLinear().domain([0, 5]).range([height - 50 - padding, marginTop + padding]);
+
+    vis.svg.selectAll("*").remove();
+
+    // Strike zone coordiates based on statcast definition: https://baseballsavant.mlb.com/statcast_search
+    const left = x(-0.83);
+    const right = x(0.83);
+    const top = y(3.5);
+    const bottom = y(1.5);
+
+    drawStrikeZoneLine(vis, left, top, right, top, 0);        
+    drawStrikeZoneLine(vis, right, top, right, bottom, 400);  
+    drawStrikeZoneLine(vis, right, bottom, left, bottom, 800);
+    drawStrikeZoneLine(vis, left, bottom, left, top, 1200, () => vis.drawData());
 };
 
 d3.csv("data/pitchers.csv").then(data => {
