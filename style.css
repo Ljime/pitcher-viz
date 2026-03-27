@@ -1,0 +1,46 @@
+body {
+  font-family: "Segoe UI";
+  text-align: center;
+  margin: 0;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+select:hover {
+  border-color: lightblue;
+}
+
+svg {
+  margin-top: 10px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+#tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}

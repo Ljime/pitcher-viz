@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title>Blue Jays Pitch Heatmap</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    </head>
+<body>
+
+  <h1>Toronto Blue Jays World Series Pitcher Heatmap</h1>
+  <h2>How should we pitch differently next season?</h2>
+  <div id="controls">
+    <label>Pitcher:</label>
+    <select id="pitcher-select"></select>
+
+    <label>Pitch Type:</label>
+    <select id="pitch-type">
+      <option value="all">All</option>
+    </select>
+  </div>
+  <div id="tooltip"></div>
+  <svg id="chart"></svg>
+
+  <script src="main.js"></script>
+</body>
+</html>
